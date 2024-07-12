@@ -16,7 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from auths.views import login,register,verify
+from users.views import detail, update, logout
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+
+    path("auth/kakao/login", login),
+    path("auth/kakao/register", register),
+    path("auth/kakao/verity", verify),
+    path("users/", detail),
+    path("users/", update),
+    path("users/logout", logout)
 ]
