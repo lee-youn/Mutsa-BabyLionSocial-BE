@@ -24,8 +24,8 @@ urlpatterns = [
 
     path("auth/kakao/login", login),
     path("auth/kakao/register", register),
-    path("auth/kakao/verity", verify),
-    path("users/", detail),
-    path("users/", update),
+    path("auth/kakao/verify", verify),
+    path("users", detail),
+    path("users", update),
     path("users/logout", logout)
 ]

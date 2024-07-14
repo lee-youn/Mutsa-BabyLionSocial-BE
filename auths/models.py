@@ -14,7 +14,7 @@ class MutsaUserManager(BaseUserManager):
         )
         user.description = description
         user.set_password(password)
-        user.save(sing=self._db)
+        user.save(using=self._db)
         return user
     def create_superuser(self, nickname, description, password=None):
         user = self.create_user(
@@ -26,33 +26,42 @@ class MutsaUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
     
-class MbtiStatus(models.Model):
-    ISTJ = 'ISTJ'
-    ISFJ = 'ISFJ'
-    INFJ = 'INFJ'
-    INTJ = 'INJJ'
-    ISTP = 'ISTP'
-    ISFP = 'ISFP'
-    INFP = 'INFP'
-    INTP = 'INTP'
-    ESTJ = 'ESTJ'
-    ESFJ = 'ESFJ'
-    ENFJ = 'ENFJ'
-    ENTJ = 'ENTJ'
-    ESTP = 'ESTP'
-    ESFP = 'ESFP'
-    ENFP = 'ENFP'
-    ENTP = 'ENTP'
-    NONE = 'none', '-', 'NONE'
+# class MbtiStatus(models.TextChoices):
+#     ISTJ = 'ISTJ', 'ISTJ'
+#     ISFJ = 'ISFJ', 'ISFJ'
+#     INFJ = 'INFJ', 'INFJ'
+#     INTJ = 'INTJ', 'INTJ'
+#     ISTP = 'ISTP', 'ISTP'
+#     ISFP = 'ISFP', 'ISFP'
+#     INFP = 'INFP', 'INFP'
+#     INTP = 'INTP', 'INTP'
+#     ESTJ = 'ESTJ', 'ESTJ'
+#     ESFJ = 'ESFJ', 'ESFJ'
+#     ENFJ = 'ENFJ', 'ENFJ'
+#     ENTJ = 'ENTJ', 'ENTJ'
+#     ESTP = 'ESTP', 'ESTP'
+#     ESFP = 'ESFP', 'ESFP'
+#     ENFP = 'ENFP', 'ENFP'
+#     ENTP = 'ENTP', 'ENTP'
+#     NONE = 'none', 'NONE'
 
 
 class MutsaUser(AbstractBaseUser):
     nickname = models.CharField(max_length=1024, unique=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
-    description = models.TextField()
-    age = models.IntegerField()
-    mbti = models.TextChoices(max_length=128, choices=MbtiStatus.choices, default=MbtiStatus.NONE)
+    description = models.TextField(max_length=500)
+    age = models.IntegerField(null=True, blank=True)
+    mbti = models.CharField(max_length=10,null=True, blank=True)
+
+    objects = MutsaUserManager()
+
+    USERNAME_FIELD = 'nickname'
+    REQUIRED_FIELDS = ['description']
+
+    @property
+    def is_staff(self):
+        return self.is_admin
 
 
 

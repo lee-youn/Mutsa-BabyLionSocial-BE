@@ -1,12 +1,12 @@
-import os
-
-import requests
-import jwt
-
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.response import Response
-
-from rest_framework_simplejwt.tokens import RefreshToken
-
+from rest_framework import serializers
 from auths.models import MutsaUser
+
+class UserSerializer(serializers.Serializer):
+    class Mets:
+        model = MutsaUser
+        fields = ['id','nickname','description','age','mbti']
+
+class UserLogoutSerializer(serializers.Serializer):
+    class Mets:
+        model = MutsaUser
+        fields = '__all__'
