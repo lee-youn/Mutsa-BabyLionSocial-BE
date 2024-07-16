@@ -53,6 +53,7 @@ class MutsaUser(AbstractBaseUser):
     description = models.TextField(max_length=500)
     age = models.IntegerField(null=True, blank=True)
     mbti = models.CharField(max_length=10,null=True, blank=True)
+    login = models.BooleanField(default=True)
 
     objects = MutsaUserManager()
 

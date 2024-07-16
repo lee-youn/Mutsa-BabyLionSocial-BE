@@ -16,6 +16,16 @@ from .serializers import UserLoginRequestSerializer, UserRegisterRequestSerializ
 
 # from auths.views import login,register,verify
 # from users.views import detail, update, logout
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def get_jwks_url():
+    discovery_url = "https://kauth.kakao.com/.well-known/openid-configuration"
+    response = requests.get(discovery_url)
+    response.raise_for_status()
+    config = response.json()
+    return config["jwks_uri"]
 
 def kakao_access_token(access_code):
     response = requests.post(
@@ -30,6 +40,7 @@ def kakao_access_token(access_code):
             'code': access_code,
         },
     )
+
     if response.status_code >= 300:
         return Response({'detail': 'Access token 교환에 실패했습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
     return response.json()
@@ -39,7 +50,11 @@ def kakao_nickname(kakao_data):
     if id_token is None:
         return Response({'detail': 'OIDC token 정보를 확인할 수 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
     
-    jwks_client = jwt.PyJWKClient(os.environ.get('KAKAO_OIDC_URI'))
+
+    jwks_url = get_jwks_url()
+    jwks_client = jwt.PyJWKClient(jwks_url)
+    
+    print(jwks_client.fetch_data)
     signing_key = jwks_client.get_signing_key_from_jwt(id_token)
     signing_algol = jwt.get_unverified_header(id_token)['alg']
     try:
@@ -47,7 +62,7 @@ def kakao_nickname(kakao_data):
             id_token,
             key=signing_key.key,
             algorithms=[signing_algol],
-            audience=os.environ.get('REACT_APP_KAKAO_API_KEY'),
+            audience=os.environ.get('KAKAO_REST_API_KEY'),
         )
     except jwt.InvalidTokenError:
         return Response({'detail': 'OIDC 인증에 실패했습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -61,8 +76,10 @@ def login(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     data = serializer.validated_data
+    print(data)
 
     kakao_data = kakao_access_token(data['access_code'])
+    print(kakao_data)
     nickname = kakao_nickname(kakao_data)
 
     try:
@@ -70,9 +87,13 @@ def login(request):
     except MutsaUser.DoesNotExist:
         return Response({'detail': '존재하지 않는 사용자입니다.'}, status=status.HTTP_404_NOT_FOUND)
     refresh = RefreshToken.for_user(user)
+    data = MutsaUser.objects.get(nickname=nickname)
+    data.login = True
+    data.save()
+    
     return Response({
         'access_token': str(refresh.access_token),
-        'refresh_token': str(refresh) 
+        'refresh_token': str(refresh)
     },status=status.HTTP_200_OK)
 
 

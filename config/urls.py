@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from auths.views import login,register,verify
-from users.views import detail, update, logout
+from users.views import user, logout,users_list
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -25,7 +25,7 @@ urlpatterns = [
     path("auth/kakao/login", login),
     path("auth/kakao/register", register),
     path("auth/kakao/verify", verify),
-    path("users", detail),
-    path("users", update),
-    path("users/logout", logout)
+    path("users", user),
+    path("users/logout", logout),
+    path("users/list", users_list)
 ]

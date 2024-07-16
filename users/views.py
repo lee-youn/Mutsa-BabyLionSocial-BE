@@ -17,29 +17,39 @@ from .serializers import UserSerializer, UserLogoutSerializer
 # from auths.views import login,register,verify
 # from users.views import detail, update, logout
 
-@api_view(['GET'])
+@api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
-def detail(request):
-    print(request.user)
-    serializer = UserSerializer(data=request.user)  # instance에 request.user 전달
-    serializer.is_valid()  # 유효성 검사 수행
-    return Response(serializer.data, status=status.HTTP_200_OK)
+def user(request):
+    match request.method:
+        case 'GET':
+            serializer = UserSerializer(request.user)  # instance에 request.user 전달
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        case 'PATCH':
+            serializer = UserSerializer(request.user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['PATCH'])
-@permission_classes([IsAuthenticated])
-def update(request):
-    serializer = UserSerializer(request.user, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout(request):
-    serializer = UserLogoutSerializer(request.user)
-    if serializer.is_valid():
-        serializer['is_active'] = 'False'
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer = UserSerializer(request.user)
+    id = serializer.data.get('id')
+
+    data = MutsaUser.objects.get(id = id)
+    data.login = False
+    data.save()
+    return Response({
+        f"logoutId": id,
+        "detail": "로그아웃이 완료되었습니다."
+    }, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def users_list(request):
+    login_user = MutsaUser.objects.filter(login=1)
+    serializer = UserSerializer(login_user, many=True)
+    return Response(serializer.data)
+
