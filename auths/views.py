@@ -47,26 +47,23 @@ def kakao_access_token(access_code):
 
 def kakao_nickname(kakao_data):
     id_token = kakao_data.get('id_token')
-    if id_token is None:
+    if not id_token:
         return Response({'detail': 'OIDC token 정보를 확인할 수 없습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-    
 
-    jwks_url = get_jwks_url()
-    jwks_client = jwt.PyJWKClient(jwks_url)
-    
-    print(jwks_client.fetch_data)
-    signing_key = jwks_client.get_signing_key_from_jwt(id_token)
-    signing_algol = jwt.get_unverified_header(id_token)['alg']
     try:
+        jwks_url = get_jwks_url()
+        jwks_client = jwt.PyJWKClient(jwks_url)
+        signing_key = jwks_client.get_signing_key_from_jwt(id_token)
+        signing_algol = jwt.get_unverified_header(id_token)['alg']
         payload = jwt.decode(
             id_token,
             key=signing_key.key,
             algorithms=[signing_algol],
             audience=os.environ.get('KAKAO_REST_API_KEY'),
         )
-    except jwt.InvalidTokenError:
+        return payload['nickname']
+    except (jwt.InvalidTokenError, requests.exceptions.RequestException) as e:
         return Response({'detail': 'OIDC 인증에 실패했습니다.'}, status=status.HTTP_401_UNAUTHORIZED)
-    return payload['nickname']
 
 
 @api_view(['POST'])
@@ -81,11 +78,13 @@ def login(request):
     kakao_data = kakao_access_token(data['access_code'])
     print(kakao_data)
     nickname = kakao_nickname(kakao_data)
+    print(nickname)
 
     try:
         user = MutsaUser.objects.get(nickname=nickname)
     except MutsaUser.DoesNotExist:
         return Response({'detail': '존재하지 않는 사용자입니다.'}, status=status.HTTP_404_NOT_FOUND)
+    user = MutsaUser.objects.get(nickname=nickname)
     refresh = RefreshToken.for_user(user)
     data = MutsaUser.objects.get(nickname=nickname)
     data.login = True
@@ -105,9 +104,12 @@ def register(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     data = serializer.validated_data
+    print(data)
 
     kakao_data = kakao_access_token(data['access_code'])
+    print(kakao_data)
     nickname = kakao_nickname(kakao_data)
+    print(nickname)
     description = data.get('description')
 
     if not nickname or not description:
@@ -119,6 +121,10 @@ def register(request):
     except MutsaUser.DoesNotExist:
         user = MutsaUser.objects.create_user(nickname=nickname, description=description)
         refresh = RefreshToken.for_user(user)
+        
+        data = MutsaUser.objects.get(nickname=nickname)
+        data.login = True
+        data.save()
         return Response({
             'access_token': str(refresh.access_token),
             'refresh_token': str(refresh)
