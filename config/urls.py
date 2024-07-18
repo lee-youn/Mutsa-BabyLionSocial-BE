@@ -15,9 +15,22 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from auths.views import login,register,verify
 from users.views import user, logout,users_list
+from order.views import OrderViewSet
+from postt.views import PostViewSet
+from rest_framework.routers import DefaultRouter
+
+class OptionalSlashRouter(DefaultRouter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.trailing_slash = '/?'
+
+
+router = OptionalSlashRouter()
+router.register(r'postt', PostViewSet, basename='post')
+router.register(r'order', OrderViewSet, basename='order')
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -27,5 +40,7 @@ urlpatterns = [
     path("auth/kakao/verify", verify),
     path("users", user),
     path("users/logout", logout),
-    path("users/list", users_list)
+    path("users/list", users_list),
+
+    path('', include(router.urls)),
 ]

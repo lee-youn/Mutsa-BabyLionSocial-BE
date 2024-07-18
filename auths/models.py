@@ -12,14 +12,12 @@ class MutsaUserManager(BaseUserManager):
         user = self.model(
             nickname=nickname,
         )
-        user.description = description
         user.set_password(password)
         user.save(using=self._db)
         return user
     def create_superuser(self, nickname, description, password=None):
         user = self.create_user(
             nickname,
-            description,
             password=password
         )
         user.is_admin = True
@@ -50,20 +48,16 @@ class MutsaUser(AbstractBaseUser):
     nickname = models.CharField(max_length=1024, unique=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
-    description = models.TextField(max_length=500)
-    age = models.IntegerField(null=True, blank=True)
-    mbti = models.CharField(max_length=10,null=True, blank=True)
+    school = models.CharField(max_length=1024, default= "-")
     login = models.BooleanField(default=True)
 
     objects = MutsaUserManager()
 
     USERNAME_FIELD = 'nickname'
-    REQUIRED_FIELDS = ['description']
 
     @property
     def is_staff(self):
         return self.is_admin
-
 
 
 # Create your models here.
